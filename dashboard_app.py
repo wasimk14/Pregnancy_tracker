@@ -12,7 +12,7 @@ if "FIREBASE_KEY" not in st.secrets:
     st.error("❌ FIREBASE_KEY missing in Streamlit Secrets.\nAdd your service key JSON under 'Secrets'.")
     st.stop()
 
-firebase_key = json.loads(st.secrets["FIREBASE_KEY"])
+firebase_key = st.secrets["FIREBASE_KEY"]
 cred = credentials.Certificate(firebase_key)
 if not firebase_admin._apps:
     initialize_app(cred)
@@ -121,3 +121,4 @@ for r in activity[:20]:
     act = r.get("action","")
     meta = r.get("meta","")
     st.write(f"{ts} · **{user}** · {act} · {meta}")
+
