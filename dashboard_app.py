@@ -95,3 +95,4 @@ with col2:
 st.subheader("📊 Recent Activity")
 for r in activity[:20]:
     st.write(f"{r.get('ts','')} · **{r.get('user','?')}** · {r.get('action','')} · {r.get('meta','')}")
+
