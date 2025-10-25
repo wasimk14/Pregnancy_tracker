@@ -1,5 +1,6 @@
 streamlit
-firebase-admin==6.4.0
-google-cloud-firestore==2.11.1
-protobuf==4.24.0
+firebase-admin
+google-cloud-firestore
+protobuf
+
 
