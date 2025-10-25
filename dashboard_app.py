@@ -5,38 +5,19 @@ import firebase_admin
 
 # ---------------- APP CONFIG ----------------
 st.set_page_config(page_title="Pregnancy Dashboard", page_icon="👶", layout="wide")
-PROJECT_ROOT = "aslam_pregnancy_planner"  # must match desktop app Firestore path
+PROJECT_ROOT = "aslam_pregnancy_planner"
 
-# ---------------- FIREBASE INIT ----------------
-if "FIREBASE_KEY" not in st.secrets:
-    st.error("❌ FIREBASE_KEY missing in Streamlit Secrets.\nAdd your service key JSON under 'Secrets'.")
+# ✅ Local Firebase key path (Update for your PC)
+KEY_PATH = r"C:\Aslam\Docs\pregnancy-planner-d9ef9-firebase-adminsdk-fbsvc-dc33fb0f0a.json"
+
+if not os.path.exists(KEY_PATH):
+    st.error("Firebase key file not found. Edit KEY_PATH to match your local path.")
     st.stop()
 
-# Convert FIREBASE_KEY TOML section into Python dict
-firebase_key = dict(st.secrets["FIREBASE_KEY"])
-
-# Initialize Firebase Admin
+cred = credentials.Certificate(KEY_PATH)
 if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_key)
     initialize_app(cred)
-
 db = firestore.client()
-
-# ---------------- ACCESS CONTROL ----------------
-# Only allow these emails
-ALLOWED_USERS = {"wasimk14@gmail.com", "h33na.ansari@gmail.com"}
-
-if "email" not in st.session_state:
-    # Streamlit Cloud provides this
-    email = st.experimental_user.email if hasattr(st.experimental_user, 'email') else None
-    st.session_state.email = email
-
-email = st.session_state.email
-if not email or email not in ALLOWED_USERS:
-    st.error("🚫 Access Denied — Please sign in with your approved Google account.")
-    st.stop()
-
-st.write(f"✅ Logged in as: **{email}**")
 
 # ---------------- DATA FETCHERS ----------------
 def get_tasks():
@@ -58,14 +39,8 @@ def get_appts():
     return appts
 
 def get_activity():
-    docs = (
-        db.collection(PROJECT_ROOT)
-        .document("activity")
-        .collection("entries")
-        .order_by("ts", direction=firestore.Query.DESCENDING)
-        .limit(200)
-        .stream()
-    )
+    docs = db.collection(PROJECT_ROOT).document("activity").collection("entries") \
+        .order_by("ts", direction=firestore.Query.DESCENDING).limit(100).stream()
     rows = []
     for d in docs:
         x = d.to_dict()
@@ -75,8 +50,8 @@ def get_activity():
         rows.append(x)
     return rows
 
-# ---------------- UI LAYOUT ----------------
-st.title("👶 Pregnancy Planner Dashboard")
+# ---------------- UI ----------------
+st.title("👶 Pregnancy Planner — Live Dashboard")
 
 today = datetime.date.today().isoformat()
 tasks = get_tasks()
@@ -117,13 +92,6 @@ with col2:
         for dt, a in sorted(upcoming):
             st.write(f"**{a['date']} {a['time']}** — {a.get('note','')}")
 
-# ---------------- Activity Feed ----------------
 st.subheader("📊 Recent Activity")
 for r in activity[:20]:
-    ts = r.get("ts","")
-    user = r.get("user","?")
-    act = r.get("action","")
-    meta = r.get("meta","")
-    st.write(f"{ts} · **{user}** · {act} · {meta}")
-
-
+    st.write(f"{r.get('ts','')} · **{r.get('user','?')}** · {r.get('action','')} · {r.get('meta','')}")
